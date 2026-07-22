@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>VerifyNG – Know Before You Lose</title>
+  <meta name="description" content="Scan Nigerian bank alerts instantly. Catch fake transfers before you lose money."/>
+  <meta name="theme-color" content="#0a0f1e"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+:root{--bg:#0a0f1e;--surf:#0d1526;--card:#131f35;--border:#1e2d45;--accent:#00d4aa;--danger:#ff4d6a;--warn:#f59e0b;--safe:#00d4aa;--text:#e8edf5;--muted:#6b7fa3;--sans:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;overflow-x:hidden}
+header{padding:16px;background:rgba(10,15,30,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),#0066ff);border-radius:10px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.brand-name{font-size:1.1rem;font-weight:800;letter-spacing:-.02em}
+.brand-name em{font-style:normal;color:var(--accent)}
+.brand-sub{font-size:.65rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+#voiceBtn{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:16px;cursor:pointer;line-height:1}
+.status-pill{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);border-radius:20px;padding:4px 10px;font-size:.65rem;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+main{flex:1;padding:14px 14px 100px;display:flex;flex-direction:column;gap:14px}
+.ledger-banner{background:linear-gradient(135deg,rgba(0,212,170,.08),rgba(0,102,255,.06));border:1px solid var(--border);border-radius:16px;padding:14px 16px}
+.ledger-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.ledger-col label{font-size:.6rem;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:2px}
+#todaySales{font-size:1.4rem;font-weight:800;letter-spacing:-.03em}
+#blockedCount{font-size:.82rem;font-weight:700;color:var(--danger)}
+.lb{height:4px;background:var(--surf);border-radius:99px;overflow:hidden;display:flex}
+.lb-g{height:100%;background:var(--accent);border-radius:99px;flex:4}
+.lb-r{height:100%;background:var(--danger);border-radius:99px;flex:1}
+.scan-counter{font-size:.65rem;color:var(--muted);margin-top:6px;font-family:var(--mono)}
+.scan-counter span{color:var(--accent);font-weight:600}
+.tabs{display:flex;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:4px;gap:4px}
+[data-tab]{flex:1;padding:9px 4px;border:none;border-radius:10px;background:transparent;color:var(--muted);font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:4px}
+[data-tab].active{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.tab-panel{display:none;flex-direction:column;gap:14px}
+.tab-panel.active{display:flex}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+.card-title{font-size:.84rem;font-weight:700;color:var(--text);margin-bottom:4px}
+.card-sub{font-size:.72rem;color:var(--muted)}
+.mode-switch{display:flex;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px;margin-bottom:14px}
+.mode-btn{flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s}
+.mode-btn.mode-active{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.upload-zone{border:2px dashed var(--border);border-radius:14px;min-height:180px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.upload-zone:hover{border-color:var(--accent)}
+#imagePreview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:13px}
+#uploadPlaceholder{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;z-index:1}
+.upload-icon{width:48px;height:48px;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);border-radius:14px;display:grid;place-items:center;font-size:22px}
+.upload-label{font-size:.78rem;font-weight:600}
+.upload-hint{font-size:.65rem;color:var(--muted)}
+.corner{position:absolute;width:16px;height:16px;border-color:var(--accent);border-style:solid;border-width:0}
+.corner.tl{top:10px;left:10px;border-top-width:2px;border-left-width:2px}
+.corner.tr{top:10px;right:10px;border-top-width:2px;border-right-width:2px}
+.corner.bl{bottom:10px;left:10px;border-bottom-width:2px;border-left-width:2px}
+.corner.br{bottom:10px;right:10px;border-bottom-width:2px;border-right-width:2px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.btn-primary{padding:13px;background:linear-gradient(135deg,var(--accent),#0088ff);border:none;border-radius:12px;color:#000;font-family:var(--sans);font-size:.82rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s,transform .1s}
+.btn-primary:active{transform:scale(.97)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{padding:13px;background:var(--surf);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--sans);font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-secondary:active{transform:scale(.97)}
+.btn-ghost{width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:var(--sans);font-size:.75rem;cursor:pointer;margin-top:8px}
+.btn-full{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#0088ff);border:none;border-radius:12px;color:#000;font-family:var(--sans);font-size:.9rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-full:active{transform:scale(.98)}
+.btn-full:disabled{opacity:.4;cursor:not-allowed}
+textarea{width:100%;background:var(--surf);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:.75rem;line-height:1.6;padding:12px;resize:none;outline:none;min-height:130px;transition:border-color .2s}
+textarea:focus{border-color:var(--accent)}
+textarea::placeholder{color:var(--muted)}
+.input-label{font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.bank-row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+.bank-chip{padding:5px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--border);color:var(--muted);font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s}
+.bank-chip.selected{background:rgba(0,212,170,.12);border-color:var(--accent);color:var(--accent)}
+.scanning{text-align:center;padding:28px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.scanning.hidden{display:none!important}
+.scan-ring{width:52px;height:52px;border-radius:50%;border:3px solid var(--accent);animation:spin-ring 1.2s ease-out infinite}
+@keyframes spin-ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.6);opacity:0}}
+#scanningMsg{font-size:.78rem;color:var(--muted)}
+.result-header{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.result-icon{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+.result-icon.fake{background:rgba(255,77,106,.15)}
+.result-icon.real{background:rgba(0,212,170,.12)}
+.result-icon.warn{background:rgba(245,158,11,.12)}
+.result-title{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.result-title.fake{color:var(--danger)}
+.result-title.real{color:var(--safe)}
+.result-title.warn{color:var(--warn)}
+.result-subtitle{font-size:.73rem;color:var(--muted);margin-top:2px}
+.conf-wrap{padding:12px 0}
+.conf-label{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:6px}
+.conf-label strong{color:var(--text);font-family:var(--mono)}
+.bar-track{height:6px;background:var(--surf);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;width:0;transition:width .7s ease}
+.bar-fill.fake{background:var(--danger)}
+.bar-fill.real{background:var(--safe)}
+.bar-fill.warn{background:var(--warn)}
+.findings{display:flex;flex-direction:column;gap:7px;padding-top:4px}
+.findings-title{font-size:.65rem;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.finding-item{display:flex;align-items:flex-start;gap:9px;background:var(--surf);border-radius:9px;padding:9px 11px}
+.finding-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.finding-dot.red{background:var(--danger)}
+.finding-dot.green{background:var(--safe)}
+.finding-dot.yellow{background:var(--warn)}
+.finding-text{font-size:.74rem;line-height:1.5}
+.share-btn{width:100%;padding:11px;background:var(--surf);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:var(--sans);font-size:.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px}
+.ussd-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ussd-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--surf);border:1px solid var(--border);border-radius:12px;text-decoration:none}
+.ussd-bank{font-size:.75rem;font-weight:700;color:var(--text)}
+.ussd-code{font-size:.72rem;font-family:var(--mono);color:var(--accent);font-weight:600}
+.ledger-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border-radius:10px}
+.ledger-badge{padding:3px 8px;border-radius:16px;font-size:.68rem;font-weight:700;white-space:nowrap}
+.ledger-badge.verified{background:rgba(0,212,170,.12);color:var(--safe)}
+.ledger-badge.blocked{background:rgba(255,77,106,.12);color:var(--danger)}
+.ledger-time{font-size:.65rem;color:var(--muted);font-family:var(--mono)}
+.ledger-amt{margin-left:auto;font-size:.8rem;font-weight:700;font-family:var(--mono)}
+.ledger-amt.green{color:var(--safe)}
+.ledger-amt.red{color:var(--danger)}
+.history-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.h-badge{padding:3px 9px;border-radius:16px;font-size:.65rem;font-weight:700;white-space:nowrap}
+.h-badge.fake{background:rgba(255,77,106,.12);color:var(--danger)}
+.h-badge.real{background:rgba(0,212,170,.12);color:var(--safe)}
+.h-badge.uncertain{background:rgba(245,158,11,.12);color:var(--warn)}
+.h-preview{font-size:.72rem;color:var(--muted);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.h-time{font-size:.62rem;color:var(--muted);white-space:nowrap}
+.tip-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.tip-item:last-child{border:none}
+.tip-num{font-family:var(--mono);font-size:.65rem;color:var(--accent);font-weight:700;margin-top:1px;flex-shrink:0}
+.tip-text{font-size:.76rem;line-height:1.5;color:var(--muted)}
+.tip-text strong{color:var(--text)}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:.78rem;line-height:1.7}
+#installBanner{background:linear-gradient(135deg,rgba(0,212,170,.08),rgba(0,102,255,.07));border:1px solid rgba(0,212,170,.2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+#installBanner.hidden{display:none}
+#installBanner p{font-size:.76rem;flex:1}
+.install-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 14px;font-family:var(--sans);font-size:.73rem;font-weight:800;cursor:pointer;flex-shrink:0}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:.76rem;color:var(--text);opacity:0;transition:all .3s;z-index:200;white-space:nowrap;pointer-events:none}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.toast-warn{border-color:rgba(245,158,11,.4);color:var(--warn)}
+.toast.toast-success{border-color:rgba(0,212,170,.4);color:var(--safe)}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(10,15,30,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding:8px 0 20px;z-index:50}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:.58rem;font-weight:600;cursor:pointer}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:18px;line-height:1}
+#upgradeModal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+#upgradeModal.hidden{display:none}
+.modal-card{background:var(--card);border-radius:24px 24px 0 0;padding:28px 20px 40px;width:100%;max-width:480px;text-align:center}
+.modal-card h2{font-size:1.2rem;font-weight:800;margin-bottom:8px}
+.modal-card p{font-size:.8rem;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.price-row{display:flex;gap:10px;margin-bottom:20px}
+.price-card{flex:1;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px 10px}
+.price-card.featured{border-color:var(--accent);background:rgba(0,212,170,.06)}
+.price-label{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.price-amount{font-size:1rem;font-weight:800;margin:4px 0 2px}
+.price-period{font-size:.62rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🔍</div>
+  <div><div class="brand-name">Verify<em>NG</em></div><div class="brand-sub">Know Before You Lose</div></div>
+  <div class="header-right">
+    <button id="voiceBtn" onclick="toggleVoice()" title="Toggle voice"><span id="voiceIcon">🔊</span></button>
+    <div class="status-pill"><span class="status-dot"></span><span id="totalChecks">0</span> scans</div>
+  </div>
+</header>
+<main>
+  <div id="installBanner" class="hidden">
+    <span style="font-size:1.3rem">📲</span>
+    <p>Install VerifyNG — works offline</p>
+    <button class="install-btn" onclick="installPWA()">Install</button>
+  </div>
+  <div class="ledger-banner">
+    <div class="ledger-top">
+      <div class="ledger-col"><label>Today's Verified Sales</label><div id="todaySales">₦0.00</div></div>
+      <div class="ledger-col" style="text-align:right"><label>Scam Alerts</label><div id="blockedCount">0 Blocked</div></div>
+    </div>
+    <div class="lb"><div class="lb-g"></div><div class="lb-r"></div></div>
+    <div class="scan-counter">Free scans: <span id="scanCountBadge">0/20 today</span></div>
+  </div>
+  <div class="tabs">
+    <button data-tab="scanner" class="active" onclick="switchTab('scanner')">🔍 Scan</button>
+    <button data-tab="ussd" onclick="switchTab('ussd')">⚡ USSD</button>
+    <button data-tab="ledger" onclick="switchTab('ledger')">📒 Ledger</button>
+    <button data-tab="history" onclick="switchTab('history')">📋 History</button>
+  </div>
+
+  <!-- SCANNER -->
+  <div class="tab-panel active" id="tab-scanner">
+    <div class="mode-switch">
+      <button class="mode-btn mode-active" id="modePhotoBtn" onclick="switchScanMode('photo')">📷 Photo / Camera</button>
+      <button class="mode-btn" id="modeTextBtn" onclick="switchScanMode('text')">✏️ Paste SMS</button>
+    </div>
+    <div id="photoSection" class="card">
+      <div class="card-title">Scan Receipt or Screenshot</div>
+      <div class="card-sub" style="margin-bottom:14px">Snap or upload a transfer receipt — OCR reads the text instantly</div>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none"/>
+      <input type="file" id="galleryInput" accept="image/*" style="display:none"/>
+      <div class="upload-zone" onclick="document.getElementById('galleryInput').click()">
+        <img id="imagePreview" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:13px" alt="Preview"/>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div id="uploadPlaceholder">
+          <div class="upload-icon">📸</div>
+          <div class="upload-label">Tap to upload photo</div>
+          <div class="upload-hint">Reads OPay, Moniepoint, GTBank, Access & more</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="document.getElementById('cameraInput').click()">📷 Open Camera</button>
+        <button class="btn-secondary" onclick="document.getElementById('galleryInput').click()">🖼️ Gallery</button>
+      </div>
+    </div>
+    <div id="textSection" class="card" style="display:none">
+      <div class="card-title">Paste SMS Alert Text</div>
+      <div class="card-sub" style="margin-bottom:12px">Copy and paste the full bank SMS message below</div>
+      <div class="input-label">Select Bank (Optional — improves accuracy)</div>
+      <div class="bank-row">
+        <div class="bank-chip" onclick="selectBank(this,'gtbank')">GTBank</div>
+        <div class="bank-chip" onclick="selectBank(this,'access')">Access</div>
+        <div class="bank-chip" onclick="selectBank(this,'zenith')">Zenith</div>
+        <div class="bank-chip" onclick="selectBank(this,'firstbank')">FirstBank</div>
+        <div class="bank-chip" onclick="selectBank(this,'uba')">UBA</div>
+        <div class="bank-chip" onclick="selectBank(this,'opay')">OPay</div>
+        <div class="bank-chip" onclick="selectBank(this,'kuda')">Kuda</div>
+        <div class="bank-chip" onclick="selectBank(this,'palmpay')">PalmPay</div>
+        <div class="bank-chip" onclick="selectBank(this,'moniepoint')">Moniepoint</div>
+        <div class="bank-chip" onclick="selectBank(this,'fcmb')">FCMB</div>
+        <div class="bank-chip" onclick="selectBank(this,'fidelity')">Fidelity</div>
+        <div class="bank-chip" onclick="selectBank(this,'wema')">Wema</div>
+      </div>
+      <div class="input-label">SMS or Alert Text</div>
+      <textarea id="alertInput" placeholder="Paste full bank SMS here...&#10;&#10;Example:&#10;GTBank: Acct **1234 Cr NGN 50,000.00&#10;Transfer from JOHN DOE&#10;Bal: NGN 75,000.00 21-Jul-2026&#10;Ref: 123456789"></textarea>
+      <button class="btn-full" id="scanBtn" onclick="runScan()" style="margin-top:12px">🔍 Scan Alert Now</button>
+      <button class="btn-ghost" onclick="clearAll()">Clear</button>
+    </div>
+    <div class="card scanning hidden" id="scanningAnim">
+      <div class="scan-ring"></div>
+      <div id="scanningMsg">Analyzing alert...</div>
+    </div>
+    <div class="card hidden" id="resultCard">
+      <div class="result-header">
+        <div class="result-icon" id="resultIcon"></div>
+        <div><div class="result-title" id="resultTitle"></div><div class="result-subtitle" id="resultSubtitle"></div></div>
+      </div>
+      <div class="conf-wrap">
+        <div class="conf-label"><span>Confidence</span><strong id="confidenceNum">0%</strong></div>
+        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+      </div>
+      <div class="findings" id="findings"></div>
+      <button class="share-btn" onclick="shareResult()">📤 Share result on WhatsApp</button>
+    </div>
+  </div>
+
+  <!-- USSD -->
+  <div class="tab-panel" id="tab-ussd">
+    <div class="card">
+      <div class="card-title">Quick USSD Balance Check</div>
+      <div class="card-sub" style="margin-bottom:14px">Tap any bank to dial instantly — works without internet data</div>
+      <div class="ussd-grid">
+        <a href="tel:*737%23" class="ussd-item"><span class="ussd-bank">GTBank</span><span class="ussd-code">*737#</span></a>
+        <a href="tel:*901%23" class="ussd-item"><span class="ussd-bank">Access Bank</span><span class="ussd-code">*901#</span></a>
+        <a href="tel:*966%23" class="ussd-item"><span class="ussd-bank">Zenith Bank</span><span class="ussd-code">*966#</span></a>
+        <a href="tel:*894%23" class="ussd-item"><span class="ussd-bank">FirstBank</span><span class="ussd-code">*894#</span></a>
+        <a href="tel:*919%23" class="ussd-item"><span class="ussd-bank">UBA</span><span class="ussd-code">*919#</span></a>
+        <a href="tel:*770%23" class="ussd-item"><span class="ussd-bank">Fidelity Bank</span><span class="ussd-code">*770#</span></a>
+        <a href="tel:*329%23" class="ussd-item"><span class="ussd-bank">FCMB</span><span class="ussd-code">*329#</span></a>
+        <a href="tel:*822%23" class="ussd-item"><span class="ussd-bank">Sterling Bank</span><span class="ussd-code">*822#</span></a>
+        <a href="tel:*909%23" class="ussd-item"><span class="ussd-bank">Stanbic IBTC</span><span class="ussd-code">*909#</span></a>
+        <a href="tel:*945%23" class="ussd-item"><span class="ussd-bank">Wema / ALAT</span><span class="ussd-code">*945#</span></a>
+        <a href="tel:*955%23" class="ussd-item"><span class="ussd-bank">Moniepoint</span><span class="ussd-code">*955#</span></a>
+        <a href="tel:*565%23" class="ussd-item"><span class="ussd-bank">BVN / NIN Check</span><span class="ussd-code">*565#</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEDGER -->
+  <div class="tab-panel" id="tab-ledger">
+    <div class="card">
+      <div class="card-title">Daily POS Cashbook</div>
+      <div class="card-sub" style="margin-bottom:14px">Auto-updated every time you scan an alert</div>
+      <div id="ledgerList" style="display:flex;flex-direction:column;gap:8px"><div class="empty-state">No transactions today.<br/>Scan an alert to start tracking.</div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="tab-panel" id="tab-history">
+    <div class="card">
+      <div class="card-title">Scan History</div>
+      <div class="card-sub" style="margin-bottom:14px">Last 50 scans saved on this device</div>
+      <div id="historyList" style="display:flex;flex-direction:column;gap:8px"><div class="empty-state">No scans yet.<br/>Paste an alert to get started.</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">Spot a Fake: Quick Guide</div>
+      <div class="tip-item"><span class="tip-num">01</span><div class="tip-text"><strong>Check sender name.</strong> Real GTBank texts come from "GTBank" — never a phone number like 08012345678.</div></div>
+      <div class="tip-item"><span class="tip-num">02</span><div class="tip-text"><strong>Look at account format.</strong> Real alerts show masked digits like **1234 — never a full account number.</div></div>
+      <div class="tip-item"><span class="tip-num">03</span><div class="tip-text"><strong>Spot spelling errors.</strong> "Creditted", "Recieved" — Nigerian banks never misspell official SMS.</div></div>
+      <div class="tip-item"><span class="tip-num">04</span><div class="tip-text"><strong>Verify balance math.</strong> If someone sends ₦50k but balance only increases ₦20k — it's fake.</div></div>
+      <div class="tip-item"><span class="tip-num">05</span><div class="tip-text"><strong>Always check your banking app.</strong> VerifyNG is a first filter — your bank app is the final word.</div></div>
+      <div class="tip-item"><span class="tip-num">06</span><div class="tip-text"><strong>Screenshots can be edited.</strong> For amounts above ₦20,000 demand to see the live banking app.</div></div>
+    </div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="scanner" onclick="switchTab('scanner')"><span class="nav-icon">🔍</span>Scanner</button>
+  <button class="nav-btn" data-tab="ussd" onclick="switchTab('ussd')"><span class="nav-icon">⚡</span>USSD</button>
+  <button class="nav-btn" data-tab="ledger" onclick="switchTab('ledger')"><span class="nav-icon">📒</span>Ledger</button>
+  <button class="nav-btn" data-tab="history" onclick="switchTab('history')"><span class="nav-icon">📋</span>History</button>
+</nav>
+<div class="toast" id="toast"></div>
+<div id="upgradeModal" class="hidden">
+  <div class="modal-card">
+    <div style="font-size:2.5rem;margin-bottom:8px">🔒</div>
+    <h2>Daily Limit Reached</h2>
+    <p>You've used your 20 free scans today.<br/>Upgrade to Pro for unlimited scans, voice alerts, and full ledger export.</p>
+    <div class="price-row">
+      <div class="price-card"><div class="price-label">Free</div><div class="price-amount">₦0</div><div class="price-period">20 scans/day</div></div>
+      <div class="price-card featured"><div class="price-label">Pro Merchant</div><div class="price-amount">₦1,000</div><div class="price-period">per month</div></div>
+      <div class="price-card"><div class="price-label">Agent Plan</div><div class="price-amount">₦2,500</div><div class="price-period">per month</div></div>
+    </div>
+    <button class="btn-full" style="margin-bottom:10px" onclick="document.getElementById('upgradeModal').classList.add('hidden');showToast('Payment coming soon!','info')">Upgrade to Pro →</button>
+    <button class="btn-ghost" onclick="document.getElementById('upgradeModal').classList.add('hidden')">Maybe later</button>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
