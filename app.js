@@ -601,15 +601,25 @@ function installPWA() {
 
 // ── Init ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Splash screen
-  setTimeout(() => {
-    const splash = document.getElementById('splash');
-    if (splash) {
-      splash.style.opacity = '0';
-      splash.style.transition = 'opacity 0.5s ease';
-      setTimeout(() => splash.remove(), 500);
+  // Splash screen — only show in browser, NOT in installed PWA
+  // (installed PWA already has its own system splash from manifest)
+  const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  const splash = document.getElementById('splash');
+  if (splash) {
+    if (isInstalledApp) {
+      // Running as installed app — remove HTML splash immediately
+      splash.remove();
+    } else {
+      // Running in browser — show animated splash then fade out
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        splash.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => splash.remove(), 500);
+      }, 2500);
     }
-  }, 2500);
+  }
 
   document.getElementById('totalChecks').textContent = state.totalChecks;
   const today = new Date().toDateString();
