@@ -1,0 +1,13 @@
+{
+  "name": "VerifyNG - Fraud Shield",
+  "short_name": "VerifyNG",
+  "description": "Nigerian fake alert and fraud scanner for POS agents and traders",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "https://api.iconify.design/twemoji:shield.svg", "sizes": "192x192", "type": "image/svg+xml" }
+  ]
+}
